@@ -37,7 +37,7 @@ class User(UserBase):
 class PostBase(BaseModel):
     title: str
     content: str
-    owner_id: str
+    owner_id: int
 
 
 class PostCreate(PostBase):

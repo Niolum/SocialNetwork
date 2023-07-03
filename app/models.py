@@ -28,9 +28,9 @@ class Post(Base):
     title: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     content: Mapped[str] = mapped_column(nullable=False)
     owner_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
-    created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP())
+    created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP(), init=False)
 
-    owner: Mapped["User"] = relationship("User")
+    owner: Mapped["User"] = relationship("User", init=False)
 
 
 class LikeDislike(Base):
