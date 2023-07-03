@@ -60,5 +60,23 @@ class LikeDislikeBase(BaseModel):
     like: bool | None
     dislike: bool | None
 
+
+class LikeDislikeCreate(LikeDislikeBase):
+    pass
+
+
+class LikeCount(BaseModel):
+    likes: int
+
+
+class DislikeCount(BaseModel):
+    dislikes: int
+
+
+class LikeDislikeUpdate(BaseModel):
+    like: bool | None
+    dislike: bool | None
+
+
 class LikeDislike(LikeDislikeBase):
     id: int
