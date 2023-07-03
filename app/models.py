@@ -15,9 +15,10 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True, init=False)
+    username: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column()
-    created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP())
+    created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP(), init=False)
 
 
 class Post(Base):
