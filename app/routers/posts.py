@@ -18,6 +18,7 @@ from app.crud import (
     delete_post
 )
 from app.oauth2 import get_current_user
+from app.exceptions import Exception_404, ExceptionOwnerUserID, ExceptionTitleExists, ExceptionOwnPost
 
 
 post_router = APIRouter(
@@ -35,15 +36,11 @@ async def create_new_post(
 ):
     db_post = await get_post_by_title(db=db, title=post.title)
     if db_post:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="There is already a Post with this title"
-        )
+        raise ExceptionTitleExists
+    
     if current_user.id != post.owner_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="owner_id must be equal to the id of the current user"
-        )
+        raise ExceptionOwnerUserID(name="onwer_id")
+    
     new_post = await create_post(db=db, post=post)
     return new_post
 
@@ -55,10 +52,8 @@ async def get_post(
 ):
     post = await get_post_by_id(db=db, post_id=post_id)
     if post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not Found"
-        )
+        raise Exception_404(name="Post")
+    
     return post
 
 
@@ -80,16 +75,17 @@ async def change_post_data(
     new_post: PostUpdate
 ):
     if current_user.id != new_post.owner_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="owner_id must be equal to the id of the current user"
-        )
+        raise ExceptionOwnerUserID(name="owner_id")
+    
     post_db = await is_users_post(db=db, post_id=post_id, owner_id=current_user.id)
     if post_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The post must be owned by the current user"
-        )
+        raise ExceptionOwnPost
+    
+    if new_post.title:
+        post = await get_post_by_title(db=db, title=new_post.title)
+        if post:
+            raise ExceptionTitleExists
+        
     post = await update_post(db=db, post=post_db, new_post=new_post)
     return post
 
@@ -102,10 +98,7 @@ async def remove_post(
 ):
     post_db = await is_users_post(db=db, post_id=post_id, owner_id=current_user.id)
     if post_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The post must be owned by the current user"
-        )
+        raise ExceptionOwnPost
     
     await delete_post(db=db, post_id=post_id)
     data = {"message": "Post has been deleted successfully"}

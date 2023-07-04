@@ -52,3 +52,12 @@ async def create_new_user(user: UserCreate, db: AsyncSession = Depends(get_sessi
         )
     new_user = await create_user(db=db, user=user)
     return new_user
+
+
+@user_router.get("/me", response_model=User)
+async def read_users_me(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_session)]
+):
+    user = await get_user_by_username(db=db, username=current_user.username)
+    return user

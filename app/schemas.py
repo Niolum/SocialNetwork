@@ -44,8 +44,10 @@ class PostCreate(PostBase):
     pass
 
 
-class PostUpdate(PostBase):
-    pass
+class PostUpdate(BaseModel):
+    title: str | None
+    content: str | None
+    owner_id: int
 
 
 class Post(PostBase):
