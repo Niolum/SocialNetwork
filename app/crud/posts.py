@@ -47,8 +47,10 @@ async def get_posts(db: AsyncSession, skip: int = 0, limit: int = 100):
 
 
 async def update_post(db: AsyncSession, post: Post, new_post: PostUpdate):
-    post.title = new_post.title
-    post.content = new_post.content
+    if new_post.title:
+        post.title = new_post.title
+    if new_post.content:
+        post.content = new_post.content
     await db.commit()
     return post
 
