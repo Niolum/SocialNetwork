@@ -32,6 +32,11 @@ class UserUpdate(UserBase):
 class User(UserBase):
     id: int
     created_at: datetime
+    full_name: str | None
+    given_name: str | None
+    family_name: str | None
+    location: str | None
+    avatar: str | None
 
 
 class PostBase(BaseModel):

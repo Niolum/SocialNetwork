@@ -1,14 +1,23 @@
+import json
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, status, requests
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas import Token, User, UserCreate
 from app.database import get_session
-from app.oauth2 import authenticate_user, create_access_token, get_current_user, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.crud import get_user_by_username, create_user, get_user_by_email
+from app.oauth2 import (
+    ACCESS_TOKEN_EXPIRE_MINUTES, 
+    CLEARBIT_API_KEY,
+    CLEARBIT_URL,
+    authenticate_user, 
+    create_access_token, 
+    get_current_user
+)
+from app.crud import get_user_by_username, create_user, get_user_by_email, add_additional_info
 
 
 user_router = APIRouter(
@@ -37,7 +46,7 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @user_router.post("/signup", response_model=User)
-async def create_new_user(user: UserCreate, db: AsyncSession = Depends(get_session)):
+async def create_new_user(user: UserCreate, db: AsyncSession = Depends(get_session)): 
     db_user = await get_user_by_username(db=db, username=user.username)
     if db_user:
         raise HTTPException(
@@ -51,6 +60,21 @@ async def create_new_user(user: UserCreate, db: AsyncSession = Depends(get_sessi
             detail="Email is already exists"
         )
     new_user = await create_user(db=db, user=user)
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{CLEARBIT_URL}{new_user.email}", headers={"Authorization": f"Bearer {CLEARBIT_API_KEY}"})
+        if response.status_code == 200:
+            try:
+                data = {}
+                data["fullName"] = json.loads(response.text)["person"]["name"]["fullName"]
+                data["givenName"] = json.loads(response.text)["person"]["name"]["givenName"]
+                data["familyName"] = json.loads(response.text)["person"]["name"]["familyName"]
+                data["location"] = json.loads(response.text)["person"]["location"]
+                data["avatar"] = json.loads(response.text)["person"]["avatar"]
+                new_user = await add_additional_info(db=db, data=data, user=new_user)
+            except KeyError:
+                pass
+            
     return new_user
 
 
