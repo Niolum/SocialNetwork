@@ -20,6 +20,7 @@ from app.crud import (
 )
 from app.models import User
 from app.exceptions import Exception_404, ExceptionOwnerUserID, ExceptionEqualLikeDislike
+from app.utils import redis
 
 
 like_dislike_router = APIRouter(
@@ -64,6 +65,12 @@ async def create_new_like_or_dislike(
         raise ExceptionEqualLikeDislike
     
     like_or_dislike = await create_like_or_dislike(db=db, like_dislike=new_like_or_dislike)
+
+    if like_or_dislike.like:
+        await redis.sadd(f"post_id:{like_or_dislike.post_id}:likes", like_or_dislike.user_id)
+    else:
+        await redis.sadd(f"post_id:{like_or_dislike.post_id}:dislikes", like_or_dislike.user_id)
+
     return like_or_dislike
 
 
@@ -75,8 +82,13 @@ async def get_likes(
     post_db = await get_post_by_id(db=db, post_id=post_id)
     if post_db is None:
         raise Exception_404(name="Post")
-    
-    count = await get_count_like(db=db, post_id=post_id)
+
+    cache = await redis.smembers(f"post_id:{post_id}:likes")
+    if cache:
+        count = await redis.scard(f"post_id:{post_id}:likes")
+    else:
+        count = await get_count_like(db=db, post_id=post_id)
+
     data = {"likes": count}
     return JSONResponse(content=data, status_code=status.HTTP_200_OK)
 
@@ -89,8 +101,13 @@ async def get_dislikes(
     post_db = await get_post_by_id(db=db, post_id=post_id)
     if post_db is None:
         raise Exception_404(name="Post")
-    
-    count = await get_count_dislike(db=db, post_id=post_id)
+
+    cache = await redis.smembers(f"post_id:{post_id}:dislikes")
+    if cache:
+        count = await redis.scard(f"post_id:{post_id}:dislikes")
+    else:
+        count = await get_count_dislike(db=db, post_id=post_id)
+
     data = {"dislikes": count}
     return JSONResponse(content=data, status_code=status.HTTP_200_OK)
 
@@ -118,6 +135,14 @@ async def change_like_dislike(
         new_like_dislike=new_like_or_dislike, 
         like_dislike=like_dislike
     )
+
+    if like_dislike.like:
+        await redis.sadd(f"post_id:{like_dislike.post_id}:likes", like_dislike.user_id)
+        await redis.srem(f"post_id:{like_dislike.post_id}:dislikes", like_dislike.user_id)
+    else:
+        await redis.sadd(f"post_id:{like_dislike.post_id}:dislikes", like_dislike.user_id)
+        await redis.srem(f"post_id:{like_dislike.post_id}:likes", like_dislike.user_id)
+
     return like_dislike
 
 
@@ -134,6 +159,11 @@ async def remove_like_or_dislike(
     like_dislike = await get_like_dislike(db=db, post_id=post_id, user_id=current_user.id)
     if like_dislike is None:
         raise Exception_404(name="Like or Dislike")
+    
+    if like_dislike.like:
+        await redis.srem(f"post_id:{like_dislike.post_id}:likes", like_dislike.user_id)
+    else:
+        await redis.srem(f"post_id:{like_dislike.post_id}:dislikes", like_dislike.user_id)
     
     await delete_like_or_dislike(db=db, post_id=post_id, user_id=current_user.id)
     data = {"message": "Like or Dislike has been deleted successfully"}
