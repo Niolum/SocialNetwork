@@ -32,3 +32,13 @@ async def get_user_by_email(db: AsyncSession, email: str):
         .where(User.email==email)
     )
     return result.scalars().first()
+
+
+async def add_additional_info(db: AsyncSession, data: dict, user: User):
+    user.full_name = data["fullName"]
+    user.given_name = data["givenName"]
+    user.family_name = data["familyName"]
+    user.location = data["location"]
+    user.avatar = data["avatar"]
+    await db.commit()
+    return user

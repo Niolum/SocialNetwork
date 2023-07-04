@@ -19,6 +19,11 @@ class User(Base):
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.CURRENT_TIMESTAMP(), init=False)
+    full_name: Mapped[str] = mapped_column(nullable=True, init=False)
+    given_name: Mapped[str] = mapped_column(nullable=True, init=False)
+    family_name: Mapped[str] = mapped_column(nullable=True, init=False)
+    location: Mapped[str] = mapped_column(nullable=True, init=False)
+    avatar: Mapped[str] = mapped_column(nullable=True, init=False)
 
 
 class Post(Base):

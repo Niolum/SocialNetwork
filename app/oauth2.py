@@ -20,6 +20,8 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+CLEARBIT_API_KEY = os.getenv("CLEARBIT_API_KEY")
+CLEARBIT_URL = os.getenv("CLEARBIT_URL")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 
