@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  socnetdb:
+    image: postgres:14
+    container_name: postgres-socnet
+    env_file:
+      - ./.env
+    volumes:
+      - socnet_db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  web:
+    build: .
+    container_name: web-socnet
+    command: >
+      /bin/sh -c "alembic upgrade head
+      && uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8000"
+    ports:
+      - 8000:8000
+  redis_cache:
+    image: redis
+    container_name: redis-socnet
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - 6379:6379
+
+  
+volumes:
+  socnet_db:
+    external: True
+  redis:
+    external: True
