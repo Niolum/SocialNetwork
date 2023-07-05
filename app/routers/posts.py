@@ -39,7 +39,7 @@ async def create_new_post(
         raise ExceptionTitleExists
     
     if current_user.id != post.owner_id:
-        raise ExceptionOwnerUserID(name="onwer_id")
+        raise ExceptionOwnerUserID(name="owner_id")
     
     new_post = await create_post(db=db, post=post)
     return new_post
